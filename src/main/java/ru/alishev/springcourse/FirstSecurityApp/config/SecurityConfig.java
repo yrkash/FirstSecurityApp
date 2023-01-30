@@ -27,7 +27,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         //конфигурируем авторизацию
         http.csrf().disable()//отключаем защиты от межсайтовой подделки запросов
                 .authorizeRequests()
-                .antMatchers("/auth/login","auth/registration","/error").permitAll()
+                .antMatchers("/auth/login","/auth/registration","/error").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin().loginPage("/auth/login")

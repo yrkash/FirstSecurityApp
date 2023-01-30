@@ -8,6 +8,8 @@ import org.springframework.validation.Validator;
 import ru.alishev.springcourse.FirstSecurityApp.models.Person;
 import ru.alishev.springcourse.FirstSecurityApp.services.PersonDetailsService;
 
+import java.util.Optional;
+
 @Component
 public class PersonValidator implements Validator {
 
@@ -25,12 +27,17 @@ public class PersonValidator implements Validator {
     @Override
     public void validate(Object target, Errors errors) {
         Person person = (Person) target;
-        try {
+        int year = person.getYearOfBirth();
+        if (year > 2023)
+            errors.rejectValue("yearOfBirth", "","Год должен быть меньше 2023");
+        Optional<Person> optionalPerson = personDetailsService.loadOptionalOfUserByUsername(person.getUsername());
+        /*try {
             personDetailsService.loadUserByUsername(person.getUsername());
         } catch (UsernameNotFoundException ignored) {
             return;
+        }*/
+        if (optionalPerson.isPresent()) {
+            errors.rejectValue("username","","Человек с таким именем уже существует");
         }
-
-        errors.rejectValue("username","","Человек с таким именем уже существует");
     }
 }
