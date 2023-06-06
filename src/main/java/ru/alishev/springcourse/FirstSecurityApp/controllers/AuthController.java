@@ -2,9 +2,13 @@ package ru.alishev.springcourse.FirstSecurityApp.controllers;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.alishev.springcourse.FirstSecurityApp.dto.AuthenticationDTO;
 import ru.alishev.springcourse.FirstSecurityApp.dto.PersonDTO;
 import ru.alishev.springcourse.FirstSecurityApp.models.Person;
 import ru.alishev.springcourse.FirstSecurityApp.security.JWTUtil;
@@ -12,7 +16,6 @@ import ru.alishev.springcourse.FirstSecurityApp.services.RegistrationService;
 import ru.alishev.springcourse.FirstSecurityApp.utils.PersonValidator;
 
 import javax.validation.Valid;
-import java.util.Collections;
 import java.util.Map;
 
 @RestController
@@ -23,12 +26,14 @@ public class AuthController {
     private final RegistrationService registrationService;
     private final JWTUtil jwtUtil;
     private final ModelMapper modelMapper;
+    private  final AuthenticationManager authenticationManager;
     @Autowired
-    public AuthController(PersonValidator personValidator, RegistrationService registrationService, JWTUtil jwtUtil, ModelMapper modelMapper) {
+    public AuthController(PersonValidator personValidator, RegistrationService registrationService, JWTUtil jwtUtil, ModelMapper modelMapper, AuthenticationManager authenticationManager) {
         this.personValidator = personValidator;
         this.registrationService = registrationService;
         this.jwtUtil = jwtUtil;
         this.modelMapper = modelMapper;
+        this.authenticationManager = authenticationManager;
     }
 
     @RequestMapping("/login")
@@ -51,6 +56,20 @@ public class AuthController {
         registrationService.register(person);
         String token = jwtUtil.generateToken(person.getUsername());
         return Map.of("jwt-token", token);
+    }
+    @PostMapping("/login")
+    public Map<String, String> performLogin(@RequestBody AuthenticationDTO authenticationDTO) {
+        UsernamePasswordAuthenticationToken authInputToken =
+                new UsernamePasswordAuthenticationToken(authenticationDTO.getUsername(), authenticationDTO.getPassword());
+
+        try {
+            authenticationManager.authenticate(authInputToken);
+        } catch (BadCredentialsException e) {
+            return Map.of("message", "Incorrect credentials");
+        }
+        String jwtToken = jwtUtil.generateToken(authenticationDTO.getUsername());
+        return Map.of("jwt-token", jwtToken);
+
     }
 
     public Person convertToPerson(PersonDTO personDTO) {
